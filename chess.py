@@ -84,12 +84,10 @@ class Display:
 
     def get_adjusted_mouse_pos(self):
         mouse_pos = pygame.mouse.get_pos()
-        print('Mouse: {}'.format(mouse_pos))
         x = mouse_pos[0] - ((WINDOW_WIDTH - GAME_WIDTH) / 2)
         y = mouse_pos[1] - ((WINDOW_HEIGHT - GAME_HEIGHT) / 2)
         pos = (x, y)
-        print('Chess: {}'.format(pos))
-        return round_to_position(pos)
+        return pos
 
     def get_setup_piece_for_pos(self, pos):
         isWhite = True if pos[0] <= 1 else False
@@ -262,7 +260,8 @@ class Display:
 
                 click = pygame.mouse.get_pressed()
                 if click[0] is True:
-                    chess_pos = self.get_adjusted_mouse_pos()
+                    mouse_pos = self.get_adjusted_mouse_pos()
+                    chess_pos = round_to_position(mouse_pos)
                     if self.selected_piece is not None and chess_pos in self.available_positions:
                         self.move_seleceted_piece(chess_pos)
                         self.new_turn()
@@ -293,7 +292,7 @@ class Display:
                         self.game_loop = False
                         self.stop = True
 
-                if self.is_mouseover_new_game(pygame.mouse.get_pos()):
+                if self.is_mouseover_new_game(self.get_adjusted_mouse_pos()):
                     click = pygame.mouse.get_pressed()
                     if click[0] is True:
                         self.init_new_game()
