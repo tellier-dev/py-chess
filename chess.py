@@ -6,24 +6,22 @@ from pygame import Color
 from piece import Piece
 from pygame import Rect
 import operator
+from util import round_to_position
 
-WIDTH = 800
-HEIGHT = 800
-SCREEN = (WIDTH, HEIGHT)
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 1000
+WINDOW_SCREEN = (WINDOW_WIDTH, WINDOW_HEIGHT)
 
-
-def round_to_position(pos):
-    x_int = int(round(pos[0] / 1))
-    y_int = int(round(pos[1] / 1))
-    x = int((x_int - (x_int % 100)) / 100)
-    y = int((y_int - (y_int % 100)) / 100)
-    return (y, x)
+GAME_WIDTH = 800
+GAME_HEIGHT = 800
+GAME_SCREEN = (GAME_WIDTH, GAME_HEIGHT)
 
 
 class Display:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode(SCREEN)
+        self.display = pygame.display.set_mode(WINDOW_SCREEN)
+        self.game_screen = pygame.Surface(GAME_SCREEN)
 
         self.game_loop = True
 
@@ -84,6 +82,13 @@ class Display:
         else:
             self.display_new_game()
 
+    def get_adjusted_mouse_pos(self):
+        mouse_pos = pygame.mouse.get_pos()
+        x = mouse_pos[0] - ((WINDOW_WIDTH - GAME_WIDTH) / 2)
+        y = mouse_pos[1] - ((WINDOW_HEIGHT - GAME_HEIGHT) / 2)
+        pos = (x, y)
+        return pos
+
     def get_setup_piece_for_pos(self, pos):
         isWhite = True if pos[0] <= 1 else False
         if (pos[0] == 1 or pos[0] == 6):
@@ -109,28 +114,30 @@ class Display:
         for y in range(0, 8):
             for x in range(0, 8):
                 color = Color(181, 38, 62) if (y + x) % 2 != 0 else Color(255, 223, 223)
-                pygame.draw.rect(self.screen, color, (x * 100, y * 100, 100, 100))
+                pygame.draw.rect(self.game_screen, color, (x * 100, y * 100, 100, 100))
 
         for piece in self.whites:
-            self.screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
+            self.game_screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
         for piece in self.blacks:
-            self.screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
+            self.game_screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
 
         if not self.gameover:
             # draw available position outlines
             for pos in self.available_positions:
-                pygame.draw.rect(self.screen, Color(50, 205, 50), (pos[1] * 100, pos[0] * 100, 100, 100), 5)
+                pygame.draw.rect(self.game_screen, Color(50, 205, 50), (pos[1] * 100, pos[0] * 100, 100, 100), 5)
         else:
             if self.gameover_overlay is not None:
-                self.screen.blit(self.gameover_overlay, (0, 250))
-                self.screen.blit(self.gameover_text, ((WIDTH / 2) - (self.gameover_text.get_width() / 2), 325 - (self.gameover_text.get_height() / 2)))
+                self.game_screen.blit(self.gameover_overlay, (0, 250))
+                self.game_screen.blit(self.gameover_text, ((GAME_WIDTH / 2) - (self.gameover_text.get_width() / 2), 325 - (self.gameover_text.get_height() / 2)))
 
                 if self.start_new_game_box is None:
                     # Adjust new game position
-                    x = WIDTH - (self.start_new_game_text.get_width() * 1.3)
+                    x = GAME_WIDTH - (self.start_new_game_text.get_width() * 1.3)
                     y = 485 - (self.start_new_game_text.get_height() / 2)
                     self.start_new_game_box = Rect(x, y, self.start_new_game_text.get_width(), self.start_new_game_text.get_height())
-                self.screen.blit(self.start_new_game_text, (self.start_new_game_box.left, self.start_new_game_box.top))
+                self.game_screen.blit(self.start_new_game_text, (self.start_new_game_box.left, self.start_new_game_box.top))
+
+        self.display.blit(self.game_screen, ((WINDOW_WIDTH - GAME_WIDTH) / 2, (WINDOW_HEIGHT - GAME_HEIGHT) / 2))
 
     def get_piece(self, pos):
         """
@@ -253,7 +260,7 @@ class Display:
 
                 click = pygame.mouse.get_pressed()
                 if click[0] is True:
-                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_pos = self.get_adjusted_mouse_pos()
                     chess_pos = round_to_position(mouse_pos)
                     if self.selected_piece is not None and chess_pos in self.available_positions:
                         self.move_seleceted_piece(chess_pos)
@@ -274,7 +281,6 @@ class Display:
             if self.gameover and self.game_loop:
                 self.display_gameover()
                 self.display_new_game()
-                print('Fucky loooooooping gameover {} stop {} game_loop {}'.format(self.gameover, self.stop, self.game_loop))
 
             while self.gameover and not self.stop:
                 self.draw()
@@ -286,7 +292,7 @@ class Display:
                         self.game_loop = False
                         self.stop = True
 
-                if self.is_mouseover_new_game(pygame.mouse.get_pos()):
+                if self.is_mouseover_new_game(self.get_adjusted_mouse_pos()):
                     click = pygame.mouse.get_pressed()
                     if click[0] is True:
                         self.init_new_game()
