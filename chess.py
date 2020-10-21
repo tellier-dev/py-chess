@@ -138,10 +138,10 @@ class Display:
         for y in range(0, 8):
             for x in range(0, 8):
                 color = self.white_square if (y + x) % 2 != 0 else self.black_square
-                if self.available_positions is None or len(self.available_positions) <= 0:
+                if self.selected_piece is None or self.selected_piece.pos in self.available_positions:
                     color = self.white_square if (y + x) % 2 != 0 else self.black_square
                 else:
-                    if (y, x) not in self.available_positions:
+                    if (self.available_positions is None or len(self.available_positions) <= 0) or (y, x) not in self.available_positions:
                         color = self.white_square_faded if (y + x) % 2 != 0 else self.black_square_faded
                 pygame.draw.rect(self.game_screen, color, (x * 100, y * 100, 100, 100))
 
@@ -149,6 +149,10 @@ class Display:
             self.game_screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
         for piece in self.blacks:
             self.game_screen.blit(piece.img, ((piece.pos[1] * 100) + 18, (piece.pos[0] * 100) + 18))
+
+        if self.selected_piece:
+            # draw available position outlines
+            pygame.draw.rect(self.game_screen, Color(255, 255, 255), (self.selected_piece.pos[1] * 100, self.selected_piece.pos[0] * 100, 100, 100), 3)
 
         if self.gameover:
             if self.gameover_screen is not None:
